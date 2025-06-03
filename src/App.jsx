@@ -1,33 +1,49 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [inputData, setInputData] = useState("");
+  const [data, setData] = useState("");
 
+  const handleInput = (event) => {
+    setInputData(event.target.value);
+  }
+
+  const getAPIData = async (data) => {
+    const query = encodeURIComponent(data);
+    const URL = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${query}/next7days?unitGroup=metric&lang=pt&include=days&key=XADLHG4KBH7HRBN7JZRNUN8MV&contentType=json`;
+    try {
+      const response = await fetch(URL, { mode: 'cors' });
+      const data = await response.json();
+      setData(data);
+      console.log(data);
+    } catch(error) {
+      console.log("Erro ao buscar dados: "+error);
+    }
+  }
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      /* geolocation is available */
+      navigator.geolocation.getCurrentPosition((position) => {
+        const coordinates = `${position.coords.latitude},${position.coords.longitude}`
+        getAPIData(coordinates);
+      });
+    } else {
+      setData("Não foi possível acessar sua localização");
+    }
+  }, []);
+    
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <input type="text" onChange={handleInput} className='border-1 rounded-[8px] p-1'/>
+      <button onClick={() => getAPIData(inputData)} className='text-2xl text-sky-600 font-bold underline cursor-pointer'>Enviar</button>
+      {data && 
+        <div className="result">
+          <li>{`${data.resolvedAddress}`}</li>
+          <li>{`${data.days[0].temp}`}°C</li>
+          <li>{`${data.days[0].description}`}</li>
+        </div>
+      }
     </>
   )
 }
